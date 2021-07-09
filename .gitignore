@@ -1,0 +1,7 @@
+nodeClient/node_modules
+react-client/node_modules
+react-client/.env
+server/node_modules
+
+# .gitignore
+
