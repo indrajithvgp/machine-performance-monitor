@@ -20,14 +20,15 @@ function socketMain(io, socket){
         }
     })
 
-    socket.on('initPerfData',async(data)=>{
+    socket.on('initPerfData', async(data)=>{
         macA = data.macA
         const mongooseResponse = await checkAndAdd(data);
         console.log(mongooseResponse);
     })
 
-    socket.on('perfData', (allPerformanceData)=>{
+    socket.on('perfData', (data) => {
         // console.log(allPerformanceData)
+        io.to('ui').emit('data', data)
     })
 }
 
