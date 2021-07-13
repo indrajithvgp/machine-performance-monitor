@@ -12,6 +12,7 @@
 const express = require('express');
 const cluster = require('cluster');
 const net = require('net');
+const cors = require('cors')
 const socketio = require('socket.io');
 // const helmet = require('helmet')
 const socketMain = require('./socketMain');
@@ -77,13 +78,21 @@ if (cluster.isMaster) {
 } else {
     // Note we don't use a port here because the master listens on it for us.
     let app = express();
+	app.use(cors())
     // app.use(express.static(__dirname + '/public'));
     // app.use(helmet());
     
 	// Don't expose our internal server to the outside world.
     const server = app.listen(0, 'localhost');
     // console.log("Worker listening...");    
-	const io = socketio(server);
+	const io = socketio(server, {
+		cors:{
+			origin:"http://localhost:3000",
+			methods:["GET", "POST"],
+			allowHeaders:["my-custom-header"],
+			credentials: false
+		}
+	});
 
 	// Tell Socket.IO to use the redis adapter. By default, the redis
 	// server is assumed to be on localhost:6379. You don't have to

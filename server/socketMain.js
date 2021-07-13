@@ -1,40 +1,60 @@
 const mongoose = require('mongoose')
-mongoose.connect('mongodb://127.0.0.1/perfData', {
-    useNewUrlParser: true,
-    useFindAndModify: false,
-    useUnifiedTopology: true
-
-})
-
-const Machine = require('./model/Machine.js')
+mongoose.connect('mongodb://127.0.0.1/perfData', {useNewUrlParser: true});
+const Machine = require('./model/Machine');
 
 function socketMain(io, socket){
     let macA;
-    socket.on('clientAuth', ()=>{
-        if(key === ''){
-
-        }else if(key === ''){
-
+    
+ 
+    socket.on('clientAuth',(key)=>{
+        if(key === 'nodeclient'){
+        
+            socket.join('clients');
+            console.log("node client added")
+        }else if(key === 'reactclient'){
+          
+            socket.join('ui');
+            console.log("A react client has joined!");
+            Machine.find({}, (err,docs)=>{
+                docs.forEach((aMachine)=>{
+                   
+                    aMachine.isActive = false;
+                    io.to('ui').emit('data',aMachine);
+                })
+            })
         }else{
-
+            
+            socket.disconnect(true);
         }
     })
 
-    socket.on('initPerfData', async(data)=>{
+    socket.on('disconnect',()=>{
+        Machine.find({macA: macA},(err, docs)=>{
+            if(docs.length > 0){
+                
+                docs[0].isActive = false;
+                io.to('ui').emit('data',docs[0]);
+            }
+        })
+    })
+
+ 
+    socket.on('initPerfData',async(data)=>{
+       
         macA = data.macA
+        
         const mongooseResponse = await checkAndAdd(data);
         console.log(mongooseResponse);
     })
 
-    socket.on('perfData', (data) => {
-        // console.log(allPerformanceData)
-        io.to('ui').emit('data', data)
-    })
+    socket.on('perfData',(data)=>{
+        console.log("Tick...")
+        io.to('ui').emit('data',data)
+    });
 }
 
-module.exports = socketMain
-
 function checkAndAdd(data){
+  
     return new Promise((resolve, reject)=>{
         Machine.findOne(
             {macA: data.macA},
@@ -43,13 +63,17 @@ function checkAndAdd(data){
                     throw err;
                     reject(err);
                 }else if(doc === null){
+                    
                     let newMachine = new Machine(data);
                     newMachine.save(); 
                     resolve('added')
                 }else{
+                    
                     resolve('found');
                 }
             }
         )
     });
 }
+
+module.exports = socketMain;
